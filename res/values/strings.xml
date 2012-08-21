@@ -6,4 +6,12 @@
 	<string name="loading">Loading…</string>
 	<string name="logout">Logout</string>
 	<string name="connect_with_facebook">Connect With Facebook</string>
+	<string name="contacts">Contacts</string>
+
+
+	<string name="login_failed">login failed</string>
+	<string name="loggin_out">loggin_out</string>
+	<string name="you_logged_out">you_logged_out</string>
+
+
 </resources>
