@@ -12,6 +12,6 @@
 	<string name="login_failed">login failed</string>
 	<string name="loggin_out">loggin_out</string>
 	<string name="you_logged_out">you_logged_out</string>
-
+	<string name="image">iamge</string>
 
 </resources>

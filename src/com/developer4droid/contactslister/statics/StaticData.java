@@ -15,6 +15,7 @@ public class StaticData {
 	public static final int EMPTY_DATA = 1;
 	public static final int DATA_EXIST = 2;
 	public static final int MAX_REACHED = 3;
+	public static final int VALUE_DOESNT_EXIST = 4;
 
 	/* String constants*/
 	public static final String SYMBOL_SPACE = " ";
