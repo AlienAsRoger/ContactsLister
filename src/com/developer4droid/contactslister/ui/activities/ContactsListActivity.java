@@ -8,12 +8,8 @@ import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
-import android.widget.Toast;
 import com.developer4droid.contactslister.R;
-import com.developer4droid.contactslister.backend.entity.ContactItem;
-import com.developer4droid.contactslister.backend.entity.FBFriendGroupsResponse;
-import com.developer4droid.contactslister.backend.entity.FBFriendsListResponse;
-import com.developer4droid.contactslister.backend.entity.FBGroupData;
+import com.developer4droid.contactslister.backend.entity.*;
 import com.developer4droid.contactslister.backend.interfaces.AbstractUpdateListener;
 import com.developer4droid.contactslister.backend.interfaces.ContactItemGetFace;
 import com.developer4droid.contactslister.backend.tasks.GetEmailsFromContactsTask;
@@ -37,7 +33,7 @@ public class ContactsListActivity extends BaseFragmentActivity implements View.O
 	private ListView listView;
 	private ContactsAdapter contactsAdapter;
 	private GroupsAdapter groupsAdapter;
-
+	private List<String> groupsIds;
 
 
 	@Override
@@ -82,14 +78,13 @@ public class ContactsListActivity extends BaseFragmentActivity implements View.O
 		int id = view.getId();
 		if (id == R.id.getContactsBtn) {
 
-//			getContactEmails(this);
 			QueryParams params = new QueryParams();
 			params.setUri(ContactsContract.Contacts.CONTENT_URI);
 
 			new GetEmailsFromContactsTask(new DbUpdateListener(), params, new ArrayList<ContactItem>()).executeTask();
 		} else if (id == R.id.listFriendsBtn) {
 			Bundle params = new Bundle();
-			params.putString("fields", "name, picture, location, groups, list_type");
+			params.putString("fields", "name, picture");
 			Utility.mAsyncRunner.request("me/friends", params,
 			new FriendsRequestListener());
 		} else if (id == R.id.listGroupsBtn) {
@@ -161,12 +156,6 @@ public class ContactsListActivity extends BaseFragmentActivity implements View.O
 							.executeTask(response);
 				}
 			});
-
-		}
-
-		public void onFacebookError(FacebookError error) {
-			Toast.makeText(getApplicationContext(), "Facebook Error: " + error.getMessage(),
-					Toast.LENGTH_SHORT).show();
 		}
 	}
 
@@ -182,6 +171,8 @@ public class ContactsListActivity extends BaseFragmentActivity implements View.O
 			if(returnedItem.getError() == null){
 				List<ContactItem> itemList = new ArrayList<ContactItem>();
 				itemList.addAll(returnedItem.getData());
+				Log.d("TEST"," total FB friends cnt = " + itemList.size());
+
 				updateList(itemList);
 			} else {
 				Log.d(TAG, "FriendsParseUpdateListener error: code = " + returnedItem.getError().getCode()
@@ -208,15 +199,18 @@ public class ContactsListActivity extends BaseFragmentActivity implements View.O
 		}
 
 		@Override
+		public void updateData(Cursor returnedItem) {
+			super.updateData(returnedItem);
+			Log.d("TEST"," total contacts cnt = " + returnedItem.getCount());
+		}
+
+		@Override
 		public void updateContacts(List<ContactItem> itemsList) {
+
 			updateList(itemsList);
 		}
 	}
 
-
-	/*
-		 * callback after friends are fetched via me/friends or fql query.
-		 */
 	public class FriendsListRequestListener extends BaseRequestListener {
 
 		@Override
@@ -229,11 +223,6 @@ public class ContactsListActivity extends BaseFragmentActivity implements View.O
 							.executeTask(response);
 				}
 			});
-		}
-
-		public void onFacebookError(FacebookError error) {
-			Toast.makeText(getApplicationContext(), "Facebook Error: " + error.getMessage(),
-					Toast.LENGTH_SHORT).show();
 		}
 	}
 
@@ -248,23 +237,88 @@ public class ContactsListActivity extends BaseFragmentActivity implements View.O
 		public void updateData(FBFriendGroupsResponse returnedItem) {
 			super.updateData(returnedItem);
 			if(returnedItem.getError() == null){
-				List<FBGroupData> itemsList = new ArrayList<FBGroupData>();
-				itemsList.addAll(returnedItem.getData());
+				List<FBGroupData> groupList = new ArrayList<FBGroupData>();
+				groupList.addAll(returnedItem.getData());
 
-				// starts count
-				if (groupsAdapter == null) {
-					groupsAdapter = new GroupsAdapter(ContactsListActivity.this, itemsList);
-				} else {
-					groupsAdapter.setItemsList(itemsList);
+				// get id/members
+				Bundle params1 = new Bundle();
+				params1.putString("fields", "name");
+				groupsIds = new ArrayList<String>();
+				String id = "";
+				for (FBGroupData data : groupList) {
+					id = data.getId();
+					Log.d("TEST", " request for id members = " + id);
+					Utility.mAsyncRunner.request(id+ "/members", params1, new GroupsCountRequestListener(id));
+					groupsIds.add(id);
 				}
-				listView.setAdapter(groupsAdapter);
+
+				if (groupsAdapter == null) {
+					groupsAdapter = new GroupsAdapter(ContactsListActivity.this, groupList);
+				} else {
+					groupsAdapter.setItemsList(groupList);
+				}
+
 
 			} else {
 				Log.d(TAG, "GroupsParseUpdateListener error: code = " + returnedItem.getError().getCode()
 						+ " message = "  +returnedItem.getError().getMessage());
 				showToast(returnedItem.getError().getMessage());
 			}
-
 		}
 	}
+
+	public class GroupsCountRequestListener extends BaseRequestListener {
+		private String id;
+		public GroupsCountRequestListener(String id) {
+			this.id = id;
+		}
+
+		@Override
+		public void onComplete(final String response, final Object state) {
+			Log.d("TEST", "response = " + response);
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					new JsonFromStringTask<FBFriendGroupsResponse>(new GroupsCntParseUpdateListener(id), FBFriendGroupsResponse.class)
+							.executeTask(response);
+				}
+			});
+		}
+	}
+
+	private class GroupsCntParseUpdateListener extends AbstractUpdateListener<FBFriendGroupsResponse> {
+
+		private String id;
+
+		public GroupsCntParseUpdateListener(String id) {
+			super(ContactsListActivity.this, null);
+			this.id = id;
+		}
+
+		@Override
+		public void updateData(FBFriendGroupsResponse returnedItem) {
+			super.updateData(returnedItem);
+			Log.d("TEST", " request for id members = " + id);
+			List<String> removeIds = new ArrayList<String>();
+			removeIds.add(id);
+
+			if(returnedItem.getError() == null){
+				Log.d("TEST", " request for id members = " + id + " update size = " + returnedItem.getData().size());
+				groupsAdapter.updateGroupsCnt(id, returnedItem.getData().size());
+			} else {
+				Log.d(TAG, "GroupsParseUpdateListener error: code = " + returnedItem.getError().getCode()
+						+ " message = "  +returnedItem.getError().getMessage());
+				showToast(returnedItem.getError().getMessage());
+			}
+
+			groupsIds.removeAll(removeIds);
+
+			if(groupsIds.size() == 0){ // we get all counts
+				int count = groupsAdapter.getTotalCount();
+				Log.d("TEST","total cnt = " + count);
+				listView.setAdapter(groupsAdapter);
+			}
+		}
+	}
+
 }

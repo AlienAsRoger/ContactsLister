@@ -76,6 +76,7 @@ public class GetEmailsFromContactsTask extends QueryForCursorTask {
 
 		if (result == StaticData.RESULT_OK) {
 			contactsUpdateFace.updateContacts(contacts);
+			taskFace.updateData(item);
 		}else {
 			taskFace.errorHandle(result);
 		}

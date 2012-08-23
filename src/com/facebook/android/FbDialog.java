@@ -24,11 +24,15 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.net.http.SslError;
 import android.os.Bundle;
+import android.os.Message;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
+import android.webkit.SslErrorHandler;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
@@ -170,14 +174,37 @@ public class FbDialog extends Dialog {
             return true;
         }
 
-        @Override
+		@Override
+		public void onFormResubmission(WebView view, Message dontResend, Message resend) {
+			super.onFormResubmission(view, dontResend, resend);
+			Log.d("TEST", "onFormResubmission");
+		}
+
+		@Override
+		public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+			super.onReceivedSslError(view, handler, error);
+			Log.d("TEST", "onFormResubmission");
+
+		}
+
+		@Override
+		public void onReceivedLoginRequest(WebView view, String realm, String account, String args) {
+			super.onReceivedLoginRequest(view, realm, account, args);
+			Log.d("TEST", "onFormResubmission");
+
+		}
+
+		@Override
         public void onReceivedError(WebView view, int errorCode,
                 String description, String failingUrl) {
             super.onReceivedError(view, errorCode, description, failingUrl);
-            mListener.onError(
+			if (popupProgressDialogFragment != null && popupProgressDialogFragment.getDialog() != null)
+				popupProgressDialogFragment.getDialog().dismiss();
+
+			mListener.onError(
                     new DialogError(description, errorCode, failingUrl));
             FbDialog.this.dismiss();
-        }
+		}
 
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
@@ -202,6 +229,8 @@ public class FbDialog extends Dialog {
             mWebView.setVisibility(View.VISIBLE);
             mCrossImage.setVisibility(View.VISIBLE);
         }
+
+
     }
 
 	@Override

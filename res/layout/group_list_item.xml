@@ -13,18 +13,34 @@
 		android:textColor="@color/white"
 		/>
 
-	<com.chess.RoboTextView
-		android:id="@+id/groupCntTxt"
+	<RelativeLayout
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:layout_alignParentRight="true"
 		android:layout_centerVertical="true"
-		android:textSize="@dimen/badge_textSize"
 		android:background="@drawable/badge"
-		android:layout_marginRight="@dimen/menu_padding_right"
 		android:minWidth="@dimen/badge_min_width"
-		android:gravity="center"
-		/>
+
+		>
+		<com.chess.RoboTextView
+			android:id="@+id/groupCntTxt"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textSize="@dimen/badge_textSize"
+			android:textColor="@color/black"
+			android:layout_marginRight="@dimen/menu_padding_right"
+			android:layout_centerInParent="true"
+			/>
+
+		<ProgressBar
+			android:id="@+id/countProgress"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			style="@android:style/Widget.ProgressBar.Small"
+			android:layout_centerInParent="true"
+			/>
+
+	</RelativeLayout>
 
 
 
