@@ -33,7 +33,18 @@
  	<dimen name="signin_button_height">50dip</dimen>
     <dimen name="default_stroke_width">1dip</dimen>
 
-    <!--Upgrade Button-->
+
+	<!--Badge-->
+	<dimen name="badge_radius">6dip</dimen>
+	<dimen name="badge_padding_top">2dip</dimen>
+	<dimen name="badge_padding_left">7dip</dimen>
+	<dimen name="badge_padding_right">7dip</dimen>
+	<dimen name="badge_padding_bottom">3dip</dimen>
+	<dimen name="menu_padding_right">16dip</dimen>
+	<dimen name="badge_textSize">17sp</dimen>
+	<dimen name="badge_min_width">40dip</dimen>
+
+	<!--Upgrade Button-->
     <dimen name="button_upgrade_left_padding">43dip</dimen>
     <dimen name="button_upgrade_right_padding">46dip</dimen>
 

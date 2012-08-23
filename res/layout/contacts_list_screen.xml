@@ -5,20 +5,49 @@
 	android:layout_height="match_parent"
 	>
 
-	<com.chess.RoboButton
-		android:id="@+id/getContactsBtn"
+	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:text="@string/contacts"
-		/>
+		>
+		<com.chess.RoboButton
+			android:id="@+id/getContactsBtn"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="@string/contacts"
+			android:layout_weight="1"
+			/>
 
-	<com.facebook.android.LoginButton
-		android:id="@+id/fb_connect"
-		style="@style/Text.Button.Login"
+		<com.facebook.android.LoginButton
+			android:id="@+id/fb_connect"
+			style="@style/Text.Button.Login"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:drawableLeft="@drawable/facebook_icon"
+			android:layout_weight="1"
+			/>
+
+	</LinearLayout>
+	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:drawableLeft="@drawable/facebook_icon"
-		/>
+		>
+		<com.chess.RoboButton
+			android:id="@+id/listFriendsBtn"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="@string/friends"
+			android:layout_weight="1"
+			/>
+
+		<com.chess.RoboButton
+			android:id="@+id/listGroupsBtn"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="@string/groups"
+			android:layout_weight="1"
+			/>
+
+	</LinearLayout>
 
 	<ListView
 		android:id="@+id/listView"

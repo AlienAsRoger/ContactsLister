@@ -1,12 +1,9 @@
 package com.developer4droid.contactslister.ui.activities;
 
-import android.content.ContentResolver;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.BaseColumns;
 import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.View;
@@ -14,7 +11,9 @@ import android.widget.ListView;
 import android.widget.Toast;
 import com.developer4droid.contactslister.R;
 import com.developer4droid.contactslister.backend.entity.ContactItem;
+import com.developer4droid.contactslister.backend.entity.FBFriendGroupsResponse;
 import com.developer4droid.contactslister.backend.entity.FBFriendsListResponse;
+import com.developer4droid.contactslister.backend.entity.FBGroupData;
 import com.developer4droid.contactslister.backend.interfaces.AbstractUpdateListener;
 import com.developer4droid.contactslister.backend.interfaces.ContactItemGetFace;
 import com.developer4droid.contactslister.backend.tasks.GetEmailsFromContactsTask;
@@ -23,13 +22,11 @@ import com.developer4droid.contactslister.db.QueryParams;
 import com.developer4droid.contactslister.statics.AppData;
 import com.developer4droid.contactslister.statics.StaticData;
 import com.developer4droid.contactslister.ui.adapters.ContactsAdapter;
+import com.developer4droid.contactslister.ui.adapters.GroupsAdapter;
 import com.facebook.android.*;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static android.provider.ContactsContract.CommonDataKinds.Email;
-import static android.provider.ContactsContract.CommonDataKinds.Phone;
 
 public class ContactsListActivity extends BaseFragmentActivity implements View.OnClickListener {
 
@@ -39,6 +36,7 @@ public class ContactsListActivity extends BaseFragmentActivity implements View.O
 	private Handler handler;
 	private ListView listView;
 	private ContactsAdapter contactsAdapter;
+	private GroupsAdapter groupsAdapter;
 
 
 
@@ -51,6 +49,8 @@ public class ContactsListActivity extends BaseFragmentActivity implements View.O
 		listView = (ListView) findViewById(R.id.listView);
 
 		findViewById(R.id.getContactsBtn).setOnClickListener(this);
+		findViewById(R.id.listFriendsBtn).setOnClickListener(this);
+		findViewById(R.id.listGroupsBtn).setOnClickListener(this);
 
 		LoginButton facebookLoginButton = (LoginButton) findViewById(R.id.fb_connect);
 		facebook = new Facebook(AppData.FACEBOOK_APP_ID);
@@ -79,13 +79,24 @@ public class ContactsListActivity extends BaseFragmentActivity implements View.O
 
 	@Override
 	public void onClick(View view) {
-		if (view.getId() == R.id.getContactsBtn) {
+		int id = view.getId();
+		if (id == R.id.getContactsBtn) {
 
 //			getContactEmails(this);
 			QueryParams params = new QueryParams();
 			params.setUri(ContactsContract.Contacts.CONTENT_URI);
 
 			new GetEmailsFromContactsTask(new DbUpdateListener(), params, new ArrayList<ContactItem>()).executeTask();
+		} else if (id == R.id.listFriendsBtn) {
+			Bundle params = new Bundle();
+			params.putString("fields", "name, picture, location, groups, list_type");
+			Utility.mAsyncRunner.request("me/friends", params,
+			new FriendsRequestListener());
+		} else if (id == R.id.listGroupsBtn) {
+			Bundle params1 = new Bundle();
+			params1.putString("fields", "name, list_type");
+			Utility.mAsyncRunner.request("me/friendlists", params1,
+			new FriendsListRequestListener());
 		}
 	}
 
@@ -115,12 +126,6 @@ public class ContactsListActivity extends BaseFragmentActivity implements View.O
 	public class SampleAuthListener implements SessionEvents.AuthListener {
 		@Override
 		public void onAuthSucceed() {
-
-			Bundle params = new Bundle();
-			params.putString("fields", "name, picture, location");
-			Utility.mAsyncRunner.request("me/friends", params,
-					new FriendsRequestListener());
-
 		}
 
 		@Override
@@ -152,7 +157,7 @@ public class ContactsListActivity extends BaseFragmentActivity implements View.O
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					new JsonFromStringTask<FBFriendsListResponse>(new JsonParseUpdateListener(), FBFriendsListResponse.class)
+					new JsonFromStringTask<FBFriendsListResponse>(new FriendsParseUpdateListener(), FBFriendsListResponse.class)
 							.executeTask(response);
 				}
 			});
@@ -165,77 +170,36 @@ public class ContactsListActivity extends BaseFragmentActivity implements View.O
 		}
 	}
 
-	private class JsonParseUpdateListener extends AbstractUpdateListener<FBFriendsListResponse> {
+	private class FriendsParseUpdateListener extends AbstractUpdateListener<FBFriendsListResponse> {
 
-		public JsonParseUpdateListener() {
+		public FriendsParseUpdateListener() {
 			super(ContactsListActivity.this, null);
 		}
 
 		@Override
 		public void updateData(FBFriendsListResponse returnedItem) {
 			super.updateData(returnedItem);
-			List<ContactItem> itemList = new ArrayList<ContactItem>();
-			itemList.addAll(returnedItem.getData());
-			updateList(itemList);
+			if(returnedItem.getError() == null){
+				List<ContactItem> itemList = new ArrayList<ContactItem>();
+				itemList.addAll(returnedItem.getData());
+				updateList(itemList);
+			} else {
+				Log.d(TAG, "FriendsParseUpdateListener error: code = " + returnedItem.getError().getCode()
+						+ " message = "  +returnedItem.getError().getMessage());
+				showToast(returnedItem.getError().getMessage());
+			}
 
 		}
 	}
 
-	public static void getContactEmails(Context context) {
-		int emailType = Email.TYPE_WORK;
-		String contactName = null;
-
-
-		ContentResolver cr = context.getContentResolver();
-		Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI, null,
-				null, null, null);
-		if (cur.getCount() > 0) {
-			while (cur.moveToNext()) {
-				String id = cur.getString(cur
-						.getColumnIndex(BaseColumns._ID));
-				contactName = cur
-						.getString(cur
-								.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-				// Log.i(TAG,"....contact name....." +
-				// contactName);
-
-				cr.query(
-						Phone.CONTENT_URI,
-						null,
-						Phone.CONTACT_ID
-								+ " = ?", new String[] { id }, null);
-
-				Cursor emailsCursor = cr.query(Email.CONTENT_URI, null,
-						Email.CONTACT_ID + " = " + id, null, null);
-				while (emailsCursor.moveToNext()) {
-					String contactEmail = emailsCursor.getString(emailsCursor
-							.getColumnIndex(Email.DATA));
-					Log.d(TAG, "Contact Name = " + contactName
-							+ " contact mail = " + contactEmail
-							+ " email type = " + emailType
-					);
-					emailType = emailsCursor.getInt(emailsCursor
-							.getColumnIndex(Phone.TYPE));
-
-
-				}
-				emailsCursor.close();
-
-			}
-		}// end of contact name cursor
-		cur.close();
-
-
-	}
 
 	private void updateList(List<ContactItem> itemsList){
 		if (contactsAdapter == null) {
 			contactsAdapter = new ContactsAdapter(ContactsListActivity.this, itemsList);
-
-			listView.setAdapter(contactsAdapter);
 		} else {
 			contactsAdapter.setItemsList(itemsList);
 		}
+		listView.setAdapter(contactsAdapter);
 	}
 
 	private class DbUpdateListener extends AbstractUpdateListener<Cursor> implements ContactItemGetFace<ContactItem, Cursor> {
@@ -250,4 +214,57 @@ public class ContactsListActivity extends BaseFragmentActivity implements View.O
 	}
 
 
+	/*
+		 * callback after friends are fetched via me/friends or fql query.
+		 */
+	public class FriendsListRequestListener extends BaseRequestListener {
+
+		@Override
+		public void onComplete(final String response, final Object state) {
+			Log.d("TEST", "response = " + response);
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					new JsonFromStringTask<FBFriendGroupsResponse>(new GroupsParseUpdateListener(), FBFriendGroupsResponse.class)
+							.executeTask(response);
+				}
+			});
+		}
+
+		public void onFacebookError(FacebookError error) {
+			Toast.makeText(getApplicationContext(), "Facebook Error: " + error.getMessage(),
+					Toast.LENGTH_SHORT).show();
+		}
+	}
+
+
+	private class GroupsParseUpdateListener extends AbstractUpdateListener<FBFriendGroupsResponse> {
+
+		public GroupsParseUpdateListener() {
+			super(ContactsListActivity.this, null);
+		}
+
+		@Override
+		public void updateData(FBFriendGroupsResponse returnedItem) {
+			super.updateData(returnedItem);
+			if(returnedItem.getError() == null){
+				List<FBGroupData> itemsList = new ArrayList<FBGroupData>();
+				itemsList.addAll(returnedItem.getData());
+
+				// starts count
+				if (groupsAdapter == null) {
+					groupsAdapter = new GroupsAdapter(ContactsListActivity.this, itemsList);
+				} else {
+					groupsAdapter.setItemsList(itemsList);
+				}
+				listView.setAdapter(groupsAdapter);
+
+			} else {
+				Log.d(TAG, "GroupsParseUpdateListener error: code = " + returnedItem.getError().getCode()
+						+ " message = "  +returnedItem.getError().getMessage());
+				showToast(returnedItem.getError().getMessage());
+			}
+
+		}
+	}
 }

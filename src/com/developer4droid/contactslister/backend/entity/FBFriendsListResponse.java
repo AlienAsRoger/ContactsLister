@@ -8,7 +8,7 @@ import java.util.List;
  * @author alien_roger
  * @created at: 21.08.12 22:35
  */
-public class FBFriendsListResponse {
+public class FBFriendsListResponse extends FBErrorResponse {
 /*
 	{"data":[
 	{

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+	<!--Shadow-->
+	<item >
+		<shape android:dither="true">
+			<corners
+				android:radius="@dimen/badge_radius"
+				/>
+			<!--<size android:height="36dip"
+				  />-->
+			<solid android:color="@color/back_shadows_chess"/>
+		</shape>
+	</item>
+
+	<!--Badge-->
+	<item
+		android:bottom="1px"
+		android:right="1px">
+		<shape android:dither="true" >
+			<padding
+				android:top="@dimen/badge_padding_top"
+				android:left="@dimen/badge_padding_left"
+				android:right="@dimen/badge_padding_right"
+				android:bottom="@dimen/badge_padding_bottom"
+				/>
+			<corners
+				android:radius="@dimen/badge_radius"
+				/>
+			<!--<size android:height="36dip"
+				/>-->
+			<gradient
+				android:angle="270"
+				android:startColor="@color/group_badge_1"
+				android:endColor="@color/group_badge_2"
+				/>
+
+			<stroke android:color="@color/group_badge_stroke"
+					android:width="1dip"/>
+		</shape>
+	</item>
+
+</layer-list>

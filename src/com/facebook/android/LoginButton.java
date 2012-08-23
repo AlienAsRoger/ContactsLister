@@ -50,7 +50,7 @@ public class LoginButton extends Button {
     }
     
     public void init(final FragmentActivity activity, final Facebook fb) {
-    	init(activity, fb, new String[] {"email","user_groups","read_friendlists"});
+    	init(activity, fb, new String[] {"email","user_groups","friends_groups","read_friendlists"});
     }
     
     public void init(final FragmentActivity activity, final Facebook fb,
